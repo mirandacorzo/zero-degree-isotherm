@@ -76,9 +76,13 @@ def cargar_todo():
         else pd.DataFrame()
     )
 
-    if not df_hist.empty:
+    # Forzar que la columna CODIGO sea string normalizado
+    if not df_hist.empty and "CODIGO" in df_hist.columns:
+        df_hist["CODIGO"] = df_hist["CODIGO"].apply(normalizar_codigo)
         df_hist["FECHA_DT"] = pd.to_datetime(df_hist["FECHA_KEY"])
-    if not df_fut.empty:
+
+    if not df_fut.empty and "CODIGO" in df_fut.columns:
+        df_fut["CODIGO"] = df_fut["CODIGO"].apply(normalizar_codigo)
         df_fut["FECHA_DT"] = pd.to_datetime(df_fut["FECHA_KEY"])
 
     return df_meta, k_era5, k_wrf, i_era5, i_wrf, df_hist, df_fut
@@ -570,7 +574,7 @@ elif modo_vis == "Todas las Estaciones (Vista Regional)":
         height=500,
         template="plotly_white",
     )
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width='stretch')
 
 # -----------------------------------------------------------------------------
 # VISTA: MAPA GEOESPACIAL
