@@ -4,6 +4,8 @@ import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
 from streamlit_folium import st_folium
+import os 
+import glob 
 
 st.set_page_config(
     page_title="Isoterma 0°C - Análisis & Mapa Interactivo", layout="wide"
