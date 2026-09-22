@@ -1,11 +1,11 @@
+import glob
+import os
 import folium
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
 from streamlit_folium import st_folium
-import os 
-import glob 
 
 st.set_page_config(
     page_title="Isoterma 0°C - Análisis & Mapa Interactivo", layout="wide"
@@ -17,11 +17,9 @@ st.markdown(
     " $0^\\circ\\text{C}$ sobre los Andes, mediante dos métodos espaciales"
 )
 
-# Rutas de archivos CSV consolidados
+# Rutas de archivos consolidados
 FILE_KRIGING = "Resultados/Metodo_Kriging_BiasCorrection/Tabla_Estadisticos_Pre_vs_Post_Kriging_Historico.xlsx"
-FILE_IDW = (
-    "Resultados/Metodo_1_BiasCorrection/Tabla_Estadisticos_Pre_vs_Post_BC_IDW_Historico.xlsx"
-)
+FILE_IDW = "Resultados/Metodo_1_BiasCorrection/Tabla_Estadisticos_Pre_vs_Post_BC_IDW_Historico.xlsx"
 FILE_META = "metadata_estaciones.csv"
 
 FILE_CSV_HISTORICO = "Procesados_CSV/series_historicas_consolidadas.parquet"
@@ -38,8 +36,9 @@ def normalizar_codigo(val):
     return digitos.zfill(6) if digitos else s
 
 
-@st.cache_data
+@st.cache_data(show_spinner="Cargando base de datos...")
 def cargar_todo():
+    # 1. Metadatos
     df_meta = (
         pd.read_csv(FILE_META)
         if FILE_META.endswith(".csv")
@@ -48,13 +47,15 @@ def cargar_todo():
     df_meta.columns = df_meta.columns.str.strip().str.upper()
     df_meta["COD_CLEAN"] = df_meta["ID_ESTACION"].apply(normalizar_codigo)
 
+    # 2. Métricas Kriging
     xls_k = pd.ExcelFile(FILE_KRIGING)
     k_era5 = pd.read_excel(xls_k, "Kriging_ERA5")
     k_wrf = pd.read_excel(xls_k, "Kriging_WRF")
     k_era5["COD_CLEAN"] = k_era5["CODIGO"].apply(normalizar_codigo)
     k_wrf["COD_CLEAN"] = k_wrf["CODIGO"].apply(normalizar_codigo)
 
-    if pd.io.common.file_exists(FILE_IDW):
+    # 3. Métricas IDW
+    if os.path.exists(FILE_IDW):
         xls_i = pd.ExcelFile(FILE_IDW)
         sheets_i = xls_i.sheet_names
         i_era5 = pd.read_excel(xls_i, sheets_i[0])
@@ -64,7 +65,7 @@ def cargar_todo():
     else:
         i_era5, i_wrf = pd.DataFrame(), pd.DataFrame()
 
-    # Cargar CSVs preprocesados
+    # 4. Parquets optimizados en memoria RAM
     df_hist = (
         pd.read_parquet(FILE_CSV_HISTORICO)
         if os.path.exists(FILE_CSV_HISTORICO)
@@ -76,61 +77,83 @@ def cargar_todo():
         else pd.DataFrame()
     )
 
-    # Forzar que la columna CODIGO sea string normalizado
     if not df_hist.empty:
         if "CODIGO" in df_hist.columns:
-            df_hist["CODIGO"] = df_hist["CODIGO"].apply(normalizar_codigo)
+            df_hist["CODIGO"] = (
+                df_hist["CODIGO"].apply(normalizar_codigo).astype("category")
+            )
         if "FECHA_KEY" in df_hist.columns:
             df_hist["FECHA_DT"] = pd.to_datetime(df_hist["FECHA_KEY"])
 
     if not df_fut.empty:
         if "CODIGO" in df_fut.columns:
-            df_fut["CODIGO"] = df_fut["CODIGO"].apply(normalizar_codigo)
+            df_fut["CODIGO"] = (
+                df_fut["CODIGO"].apply(normalizar_codigo).astype("category")
+            )
         if "FECHA_KEY" in df_fut.columns:
             df_fut["FECHA_DT"] = pd.to_datetime(df_fut["FECHA_KEY"])
 
     return df_meta, k_era5, k_wrf, i_era5, i_wrf, df_hist, df_fut
 
+
 df_meta, k_era5, k_wrf, i_era5, i_wrf, df_hist_all, df_fut_all = cargar_todo()
 
 
 # =============================================================================
-# FUNCIONES RÁPIDAS DE FILTRADO
+# FUNCIONES RÁPIDAS DE FILTRADO (SIN CACHÉ PARA EVITAR DUPLICAR RAM)
 # =============================================================================
 def extraer_serie_diaria(cod_est, modelo_sel):
     if df_hist_all.empty:
         return pd.DataFrame()
-    
-    df_st = df_hist_all[df_hist_all["CODIGO"] == cod_est].copy()
+
+    cod_clean = normalizar_codigo(cod_est)
+    df_st = df_hist_all[df_hist_all["CODIGO"] == cod_clean]
+
     if df_st.empty:
         return pd.DataFrame()
 
-    # Mapear columnas según el modelo seleccionado
-    df_res = pd.DataFrame({"FECHA_DT": df_st["FECHA_DT"]})
+    cols_deseadas = ["FECHA_DT"]
+    renombres = {}
+
     if "HGT_0C" in df_st.columns:
-        df_res["HGT_0C"] = df_st["HGT_0C"]
+        cols_deseadas.append("HGT_0C")
 
     if modelo_sel == "ERA5":
-        if "ERA5_PRE_BC" in df_st.columns: df_res["PRE_BC"] = df_st["ERA5_PRE_BC"]
-        if "ERA5_POST_KRIGING" in df_st.columns: df_res["POST_KRIGING"] = df_st["ERA5_POST_KRIGING"]
-        if "ERA5_POST_IDW" in df_st.columns: df_res["POST_IDW"] = df_st["ERA5_POST_IDW"]
+        if "ERA5_PRE_BC" in df_st.columns:
+            cols_deseadas.append("ERA5_PRE_BC")
+            renombres["ERA5_PRE_BC"] = "PRE_BC"
+        if "ERA5_POST_KRIGING" in df_st.columns:
+            cols_deseadas.append("ERA5_POST_KRIGING")
+            renombres["ERA5_POST_KRIGING"] = "POST_KRIGING"
+        if "ERA5_POST_IDW" in df_st.columns:
+            cols_deseadas.append("ERA5_POST_IDW")
+            renombres["ERA5_POST_IDW"] = "POST_IDW"
     else:
-        if "WRF_PRE_BC" in df_st.columns: df_res["PRE_BC"] = df_st["WRF_PRE_BC"]
-        if "WRF_POST_KRIGING" in df_st.columns: df_res["POST_KRIGING"] = df_st["WRF_POST_KRIGING"]
-        if "WRF_POST_IDW" in df_st.columns: df_res["POST_IDW"] = df_st["WRF_POST_IDW"]
+        if "WRF_PRE_BC" in df_st.columns:
+            cols_deseadas.append("WRF_PRE_BC")
+            renombres["WRF_PRE_BC"] = "PRE_BC"
+        if "WRF_POST_KRIGING" in df_st.columns:
+            cols_deseadas.append("WRF_POST_KRIGING")
+            renombres["WRF_POST_KRIGING"] = "POST_KRIGING"
+        if "WRF_POST_IDW" in df_st.columns:
+            cols_deseadas.append("WRF_POST_IDW")
+            renombres["WRF_POST_IDW"] = "POST_IDW"
 
-    return df_res.sort_values("FECHA_DT")
+    return df_st[cols_deseadas].rename(columns=renombres).sort_values("FECHA_DT")
 
 
 def extraer_serie_ssp585(cod_est):
     if df_fut_all.empty:
         return pd.DataFrame()
+
     cod_clean = normalizar_codigo(cod_est)
-    df_st = df_fut_all[df_fut_all["CODIGO"] == cod_clean].copy()
+    df_st = df_fut_all[df_fut_all["CODIGO"] == cod_clean]
 
     if df_st.empty or "FECHA_DT" not in df_st.columns:
         return pd.DataFrame()
+
     return df_st.sort_values("FECHA_DT")
+
 
 # SIDEBAR
 # -----------------------------------------------------------------------------
@@ -268,7 +291,7 @@ if modo_vis == "Por Estación Individual":
     st.divider()
 
     st.subheader("📈 Serie de Tiempo Diaria Comparativa (Histórico 1980–2014)")
-    df_ts = extraer_serie_diaria(normalizar_codigo(cod_est), modelo_sel)
+    df_ts = extraer_serie_diaria(cod_est, modelo_sel)
 
     if not df_ts.empty:
         fig_ts = go.Figure()
@@ -318,7 +341,7 @@ if modo_vis == "Por Estación Individual":
             template="plotly_white",
             hovermode="x unified",
         )
-        st.plotly_chart(fig_ts, use_container_width=True)
+        st.plotly_chart(fig_ts, width="stretch")
 
     if mostrar_ssp585:
         st.divider()
@@ -326,7 +349,7 @@ if modo_vis == "Por Estación Individual":
             f"🔮 Proyección Futura WRF — Escenario SSP5-8.5 (2015–2065) | {estacion_sel}"
         )
 
-        df_fut = extraer_serie_ssp585(normalizar_codigo(cod_est))
+        df_fut = extraer_serie_ssp585(cod_est)
 
         if not df_fut.empty:
             fig_fut = go.Figure()
@@ -469,7 +492,7 @@ if modo_vis == "Por Estación Individual":
             height=350,
             template="plotly_white",
         )
-        st.plotly_chart(fig_est, use_container_width=True)
+        st.plotly_chart(fig_est, width="stretch")
 
     with c_right:
         st.subheader("🗺️ Ubicación Espacial")
@@ -587,13 +610,13 @@ elif modo_vis == "Todas las Estaciones (Vista Regional)":
         height=500,
         template="plotly_white",
     )
-    st.plotly_chart(fig, width='stretch')
+    st.plotly_chart(fig, width="stretch")
 
 # -----------------------------------------------------------------------------
 # VISTA: MAPA GEOESPACIAL
 # -----------------------------------------------------------------------------
 else:
-    st.subheader("MAPA Interactivo de la Red de Estaciones Meteorológicas")
+    st.subheader("🗺️ Mapa Interactivo de la Red de Estaciones Meteorológicas")
     df_mapa = df_k.dropna(subset=["LAT", "LON"]).copy()
 
     if not df_mapa.empty:
