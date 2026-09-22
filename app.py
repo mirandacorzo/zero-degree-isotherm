@@ -63,8 +63,16 @@ def cargar_todo():
         i_era5, i_wrf = pd.DataFrame(), pd.DataFrame()
 
     # Cargar CSVs preprocesados
-    df_hist = pd.read_csv(FILE_CSV_HISTORICO, dtype={"CODIGO": str}) if pd.io.common.file_exists(FILE_CSV_HISTORICO) else pd.DataFrame()
-    df_fut = pd.read_csv(FILE_CSV_FUTURO, dtype={"CODIGO": str}) if pd.io.common.file_exists(FILE_CSV_FUTURO) else pd.DataFrame()
+    df_hist = (
+        pd.read_parquet(FILE_CSV_HISTORICO)
+        if os.path.exists(FILE_CSV_HISTORICO)
+        else pd.DataFrame()
+    )
+    df_fut = (
+        pd.read_parquet(FILE_CSV_FUTURO)
+        if os.path.exists(FILE_CSV_FUTURO)
+        else pd.DataFrame()
+    )
 
     if not df_hist.empty:
         df_hist["FECHA_DT"] = pd.to_datetime(df_hist["FECHA_KEY"])
@@ -72,7 +80,6 @@ def cargar_todo():
         df_fut["FECHA_DT"] = pd.to_datetime(df_fut["FECHA_KEY"])
 
     return df_meta, k_era5, k_wrf, i_era5, i_wrf, df_hist, df_fut
-
 
 df_meta, k_era5, k_wrf, i_era5, i_wrf, df_hist_all, df_fut_all = cargar_todo()
 
