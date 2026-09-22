@@ -18,7 +18,7 @@ st.markdown(
 # Rutas de archivos CSV consolidados
 FILE_KRIGING = "Resultados/Metodo_Kriging_BiasCorrection/Tabla_Estadisticos_Pre_vs_Post_Kriging_Historico.xlsx"
 FILE_IDW = (
-    "Resultados/Metodo_1_BiasCorrection/Tabla_Estadisticos_Pre_vs_Post_BC_Historico.xlsx"
+    "Resultados/Metodo_1_BiasCorrection/Tabla_Estadisticos_Pre_vs_Post_BC_IDW_Historico.xlsx"
 )
 FILE_META = "metadata_estaciones.csv"
 
