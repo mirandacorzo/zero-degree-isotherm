@@ -20,7 +20,7 @@ FILE_KRIGING = "Resultados/Metodo_Kriging_BiasCorrection/Tabla_Estadisticos_Pre_
 FILE_IDW = (
     "Resultados/Metodo_1_BiasCorrection/Tabla_Estadisticos_Pre_vs_Post_BC.xlsx"
 )
-FILE_META = "Data_estaciones/metadata_estaciones.csv"
+FILE_META = "metadata_estaciones.csv"
 
 FILE_CSV_HISTORICO = "Procesados_CSV/series_historicas_consolidadas.csv"
 FILE_CSV_FUTURO = "Procesados_CSV/series_futuras_ssp585.csv"
