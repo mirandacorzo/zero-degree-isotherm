@@ -77,13 +77,17 @@ def cargar_todo():
     )
 
     # Forzar que la columna CODIGO sea string normalizado
-    if not df_hist.empty and "CODIGO" in df_hist.columns:
-        df_hist["CODIGO"] = df_hist["CODIGO"].apply(normalizar_codigo)
-        df_hist["FECHA_DT"] = pd.to_datetime(df_hist["FECHA_KEY"])
+    if not df_hist.empty:
+        if "CODIGO" in df_hist.columns:
+            df_hist["CODIGO"] = df_hist["CODIGO"].apply(normalizar_codigo)
+        if "FECHA_KEY" in df_hist.columns:
+            df_hist["FECHA_DT"] = pd.to_datetime(df_hist["FECHA_KEY"])
 
-    if not df_fut.empty and "CODIGO" in df_fut.columns:
-        df_fut["CODIGO"] = df_fut["CODIGO"].apply(normalizar_codigo)
-        df_fut["FECHA_DT"] = pd.to_datetime(df_fut["FECHA_KEY"])
+    if not df_fut.empty:
+        if "CODIGO" in df_fut.columns:
+            df_fut["CODIGO"] = df_fut["CODIGO"].apply(normalizar_codigo)
+        if "FECHA_KEY" in df_fut.columns:
+            df_fut["FECHA_DT"] = pd.to_datetime(df_fut["FECHA_KEY"])
 
     return df_meta, k_era5, k_wrf, i_era5, i_wrf, df_hist, df_fut
 
@@ -121,9 +125,12 @@ def extraer_serie_diaria(cod_est, modelo_sel):
 def extraer_serie_ssp585(cod_est):
     if df_fut_all.empty:
         return pd.DataFrame()
-    df_st = df_fut_all[df_fut_all["CODIGO"] == cod_est].copy()
-    return df_st.sort_values("FECHA_DT") if not df_st.empty else pd.DataFrame()
+    cod_clean = normalizar_codigo(cod_est)
+    df_st = df_fut_all[df_fut_all["CODIGO"] == cod_clean].copy()
 
+    if df_st.empty or "FECHA_DT" not in df_st.columns:
+        return pd.DataFrame()
+    return df_st.sort_values("FECHA_DT")
 
 # SIDEBAR
 # -----------------------------------------------------------------------------
@@ -323,6 +330,7 @@ if modo_vis == "Por Estación Individual":
 
         if not df_fut.empty:
             fig_fut = go.Figure()
+            tiene_trazas = False
 
             if "POST_IDW_SSP585" in df_fut.columns and metodo_sel in [
                 "Comparativa (IDW vs Kriging)",
@@ -352,6 +360,7 @@ if modo_vis == "Por Estación Individual":
                         line=dict(color="#8c564b", width=2),
                     )
                 )
+                tiene_trazas = True
 
             if "POST_KRIGING_SSP585" in df_fut.columns and metodo_sel in [
                 "Comparativa (IDW vs Kriging)",
@@ -381,18 +390,22 @@ if modo_vis == "Por Estación Individual":
                         line=dict(color="#117a65", width=2),
                     )
                 )
+                tiene_trazas = True
 
-            fig_fut.update_layout(
-                xaxis_title="Fecha Proyección",
-                yaxis_title="Isoterma 0°C (m s.n.m.)",
-                height=420,
-                template="plotly_white",
-                hovermode="x unified",
-            )
-            st.plotly_chart(fig_fut, use_container_width=True)
+            if tiene_trazas:
+                fig_fut.update_layout(
+                    xaxis_title="Fecha Proyección",
+                    yaxis_title="Isoterma 0°C (m s.n.m.)",
+                    height=420,
+                    template="plotly_white",
+                    hovermode="x unified",
+                )
+                st.plotly_chart(fig_fut, width="stretch")
+            else:
+                st.info("No hay datos disponibles para el método espacial seleccionado.")
         else:
             st.info(
-                "No se encontraron archivos de proyección futura para esta estación."
+                "No se encontraron datos de proyección futura para esta estación."
             )
 
     st.divider()
