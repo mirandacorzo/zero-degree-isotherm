@@ -22,8 +22,8 @@ FILE_IDW = (
 )
 FILE_META = "metadata_estaciones.csv"
 
-FILE_CSV_HISTORICO = "Procesados_CSV/series_historicas_consolidadas.csv"
-FILE_CSV_FUTURO = "Procesados_CSV/series_futuras_ssp585.csv"
+FILE_CSV_HISTORICO = "Procesados_CSV/series_historicas_consolidadas.parquet"
+FILE_CSV_FUTURO = "Procesados_CSV/series_futuras_ssp585.parquet"
 
 
 def normalizar_codigo(val):
