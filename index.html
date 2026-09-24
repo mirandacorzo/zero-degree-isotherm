@@ -5,117 +5,348 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Isoterma 0°C - Andes Peruanos</title>
   
-  <!-- Estilos y Librerías Web de libre acceso -->
+  <!-- Plotly & Leaflet -->
   <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
   <style>
-    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px; background-color: #f8f9fa; color: #333; }
-    .header { text-align: center; margin-bottom: 20px; }
-    .controls { display: flex; gap: 15px; margin-bottom: 20px; justify-content: center; background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-    select, label { font-size: 15px; }
-    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-    .card { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-    #map { height: 450px; border-radius: 6px; }
-    #chart-hist, #chart-fut { height: 420px; }
-    @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+    * { box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 0; padding: 0; background-color: #0e1117; color: #fafafa; display: flex; min-height: 100vh; }
+    
+    /* Sidebar lateral */
+    .sidebar { width: 320px; background-color: #262730; padding: 20px; flex-shrink: 0; border-right: 1px solid #363940; overflow-y: auto; }
+    .sidebar h2 { font-size: 18px; margin-top: 0; border-bottom: 1px solid #41444c; padding-bottom: 10px; }
+    .sidebar-section { margin-bottom: 20px; }
+    .sidebar-section label { font-size: 14px; font-weight: 600; display: block; margin-bottom: 8px; color: #d0d0d0; }
+    .radio-group, .checkbox-group { display: flex; flex-direction: column; gap: 8px; font-size: 14px; }
+    .radio-group label, .checkbox-group label { font-weight: normal; cursor: pointer; }
+    select { width: 100%; padding: 8px; background: #0e1117; color: #fff; border: 1px solid #41444c; border-radius: 4px; font-size: 14px; }
+    
+    /* Main Content */
+    .main-content { flex: 1; padding: 30px; overflow-y: auto; }
+    .header h1 { font-size: 32px; margin: 0 0 5px 0; }
+    .header p { color: #b0b0b0; margin-top: 0; margin-bottom: 25px; font-size: 15px; }
+    
+    .station-title { font-size: 22px; font-weight: bold; margin-bottom: 20px; color: #ffffff; border-bottom: 1px solid #363940; padding-bottom: 10px; }
+    
+    /* Metrics Grid */
+    .metrics-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 20px; }
+    .metric-card { background: #161a23; padding: 15px; border-radius: 6px; border: 1px solid #262730; }
+    .metric-label { font-size: 12px; color: #9a9a9a; margin-bottom: 5px; }
+    .metric-value { font-size: 22px; font-weight: bold; color: #ffffff; }
+    .metric-delta { font-size: 12px; margin-top: 5px; font-weight: 600; }
+    .delta-green { color: #00cc96; }
+    
+    .divider { height: 1px; background: #262730; margin: 25px 0; }
+    
+    /* Charts & Maps */
+    .chart-container { background: #0e1117; border-radius: 6px; padding: 10px; margin-bottom: 20px; }
+    #map { height: 450px; border-radius: 6px; border: 1px solid #262730; }
+    
+    @media (max-width: 1024px) {
+      body { flex-direction: column; }
+      .sidebar { width: 100%; }
+      .metrics-grid { grid-template-columns: repeat(2, 1fr); }
+    }
   </style>
 </head>
 <body>
 
-  <div class="header">
-    <h1>🏔️ Isoterma 0°C - Andes Peruanos</h1>
-    <p>Desempeño de la Corrección de Sesgo Espacial (WRF / ERA5)</p>
+  <!-- SIDEBAR LATERAL -->
+  <div class="sidebar">
+    <h2>⚙️ Configuración</h2>
+    
+    <div class="sidebar-section">
+      <label>1. Selecciona Modelo:</label>
+      <div class="radio-group">
+        <label><input type="radio" name="modelo" value="wrf" checked onchange="actualizarInterfaz()"> WRF</label>
+        <label><input type="radio" name="modelo" value="era5" onchange="actualizarInterfaz()"> ERA5</label>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <label>2. Modo de Análisis:</label>
+      <div class="radio-group">
+        <label><input type="radio" name="modo" value="individual" checked onchange="actualizarModo()"> Por Estación Individual</label>
+        <label><input type="radio" name="modo" value="regional" onchange="actualizarModo()"> Todas las Estaciones (Vista Regional)</label>
+        <label><input type="radio" name="modo" value="mapa" onchange="actualizarModo()"> 🗺️ Mapa Geoespacial</label>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <label>3. Método Espacial:</label>
+      <div class="radio-group">
+        <label><input type="radio" name="metodo" value="comp" checked onchange="actualizarGraficos()"> Comparativa (IDW vs Kriging)</label>
+        <label><input type="radio" name="metodo" value="kriging" onchange="actualizarGraficos()"> Solo Kriging</label>
+        <label><input type="radio" name="metodo" value="idw" onchange="actualizarGraficos()"> Solo IDW</label>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="sidebar-section">
+      <div class="checkbox-group">
+        <label><input type="checkbox" id="check-futuro" onchange="actualizarGraficos()"> 🔮 Escenario Futuro WRF (SSP5-8.5: 2015–2065)</label>
+      </div>
+    </div>
+
+    <div class="sidebar-section" id="section-select-estacion">
+      <label>🎯 Selecciona la Estación:</label>
+      <select id="select-estacion" onchange="cargarEstacion()"></select>
+    </div>
   </div>
 
-  <div class="controls">
-    <div>
-      <label><b>Seleccionar Estación:</b> </label>
-      <select id="select-estacion" onchange="renderizar()"></select>
+  <!-- MAIN CONTENT -->
+  <div class="main-content">
+    <div class="header">
+      <h1>🏔️ Isoterma 0°C</h1>
+      <p>Explorador de desempeño de la corrección de sesgo espacial en la Isoterma 0°C sobre los Andes, mediante dos métodos espaciales</p>
     </div>
-    <div>
-      <label>
-        <input type="checkbox" id="check-futuro" onchange="renderizar()"> 🔮 Ver Proyección SSP5-8.5 (2015–2065)
-      </label>
-    </div>
-  </div>
 
-  <div class="grid">
-    <div class="card">
-      <h3>🗺️ Ubicación de Estaciones</h3>
+    <!-- VISTA INDIVIDUAL -->
+    <div id="vista-individual">
+      <div class="station-title" id="titulo-estacion">📍 Estación: --</div>
+
+      <!-- PRIMERA FILA DE METRICAS (OBSERVACION) -->
+      <div class="metrics-grid">
+        <div class="metric-card">
+          <div class="metric-label">Isoterma 0°C Observada (Media)</div>
+          <div class="metric-value" id="m-obs">-- m s.n.m.</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Altitud Estación</div>
+          <div class="metric-value" id="m-alt">-- m s.n.m.</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Días Observados (N)</div>
+          <div class="metric-value" id="m-dias">-- días</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Fuente</div>
+          <div class="metric-value" id="m-src">--</div>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- SEGUNDA FILA DE METRICAS (BIAS CORRECTION) -->
+      <div class="metrics-grid">
+        <div class="metric-card">
+          <div class="metric-label">Isoterma Pre-BC</div>
+          <div class="metric-value" id="m-pre">-- m</div>
+          <div class="metric-delta delta-green">Sig. 95%: ✅ SÍ (p ≤ 0.05)</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Isoterma Post-IDW</div>
+          <div class="metric-value" id="m-idw">-- m</div>
+          <div class="metric-delta delta-green">Sig. 95%: ✅ SÍ (p ≤ 0.05)</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Isoterma Post-Kriging</div>
+          <div class="metric-value" id="m-kriging">-- m</div>
+          <div class="metric-delta delta-green">Sig. 95%: ✅ SÍ (p ≤ 0.05)</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Correlación R (Kriging)</div>
+          <div class="metric-value" id="m-r">--</div>
+          <div class="metric-delta" style="color:#b0b0b0" id="m-pval">p-val: 0.00e+00</div>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <h3>📈 Serie de Tiempo Diaria Comparativa (Histórico 1980–2014)</h3>
+      <div class="chart-container" id="chart-historico"></div>
+
+      <div id="container-futuro" style="display:none;">
+        <div class="divider"></div>
+        <h3>🔮 Proyección Futura WRF — Escenario SSP5-8.5 (2015–2065)</h3>
+        <div class="chart-container" id="chart-futuro"></div>
+      </div>
+    </div>
+
+    <!-- VISTA MAPA -->
+    <div id="vista-mapa" style="display:none;">
+      <h3>🗺️ Mapa Interactivo de la Red de Estaciones Meteorológicas</h3>
       <div id="map"></div>
     </div>
-    <div class="card">
-      <h3>📈 Serie Histórica (1980–2014)</h3>
-      <div id="chart-hist"></div>
-    </div>
   </div>
-
-  <div class="card" id="card-futuro" style="display:none; margin-top:20px;">
-    <h3>🔮 Proyección Futura SSP5-8.5 (2015–2065)</h3>
-    <div id="chart-fut"></div>
-  </div>
-
-  <!-- Cargar Datos JS -->
-  <script src="data.js"></script>
 
   <script>
-    const selector = document.getElementById('select-estacion');
-    const checkFuturo = document.getElementById('check-futuro');
+    let estacionesData = {};
+    let currentSerie = null;
+    let map = null, markersGroup = null;
 
-    // Inicializar Mapa Leaflet
-    const map = L.map('map').setView([-11.5, -75.5], 6);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(map);
-
-    // Cargar opciones
-    Object.keys(DATA_ESTACIONES).forEach(cod => {
-      const est = DATA_ESTACIONES[cod];
-      const opt = document.createElement('option');
-      opt.value = cod;
-      opt.innerText = `${est.nombre} (${cod})`;
-      selector.appendChild(opt);
-
-      if (est.lat && est.lon) {
-        const marker = L.circleMarker([est.lat, est.lon], {
-          radius: 7,
-          color: est.r_kriging >= 0.6 ? 'green' : (est.r_kriging >= 0.4 ? 'orange' : 'red'),
-          fillOpacity: 0.8
-        }).addTo(map);
-
-        marker.bindPopup(`<b>${est.nombre}</b><br>Obs: ${est.obs_media.toFixed(1)} m<br>RMSE Kriging: ${est.rmse_kriging.toFixed(1)} m`);
-        marker.on('click', () => { selector.value = cod; renderizar(); });
-      }
-    });
-
-    function renderizar() {
-      const cod = selector.value;
-      const est = DATA_ESTACIONES[cod];
-
-      // Gráfico Histórico
-      const traceObs = { x: est.historico.fechas, y: est.historico.obs, mode: 'lines', name: 'Observación', line: { color: '#1f77b4', width: 1.2 } };
-      const tracePre = { x: est.historico.fechas, y: est.historico.wrf_pre, mode: 'lines', name: 'Pre-BC Original', line: { color: '#ef553b', width: 0.8 } };
-      const traceKrig = { x: est.historico.fechas, y: est.historico.wrf_kriging, mode: 'lines', name: 'Post-Kriging', line: { color: '#00cc96', width: 1 } };
-
-      Plotly.newPlot('chart-hist', [traceObs, tracePre, traceKrig], {
-        xaxis: { title: 'Fecha' }, yaxis: { title: 'Isoterma 0°C (m s.n.m.)' },
-        margin: { t: 20, b: 40, l: 50, r: 20 }, hovermode: 'x unified'
+    // Cargar indice general de estaciones al iniciar
+    fetch('datos/estaciones.json')
+      .then(res => res.json())
+      .then(data => {
+        estacionesData = data;
+        poblarSelectorEstaciones();
+        cargarEstacion();
       });
 
-      // Gráfico Futuro
-      if (checkFuturo.checked) {
-        document.getElementById('card-futuro').style.display = 'block';
-        const traceFutK = { x: est.futuro.fechas, y: est.futuro.kriging, mode: 'lines', name: 'Futuro Post-Kriging', line: { color: '#9467bd', width: 0.4 } };
-        Plotly.newPlot('chart-fut', [traceFutK], {
-          xaxis: { title: 'Fecha Proyección' }, yaxis: { title: 'Isoterma 0°C (m s.n.m.)' },
-          margin: { t: 20, b: 40, l: 50, r: 20 }, hovermode: 'x unified'
-        });
-      } else {
-        document.getElementById('card-futuro').style.display = 'none';
+    function poblarSelectorEstaciones() {
+      const select = document.getElementById('select-estacion');
+      select.innerHTML = '';
+      Object.keys(estacionesData).sort((a,b) => estacionesData[a].nombre.localeCompare(estacionesData[b].nombre)).forEach(cod => {
+        const opt = document.createElement('option');
+        opt.value = cod;
+        opt.innerText = `${estacionesData[cod].nombre}`;
+        select.appendChild(opt);
+      });
+    }
+
+    function getRadioValue(name) {
+      return document.querySelector(`input[name="${name}"]:checked`).value;
+    }
+
+    function actualizarInterfaz() {
+      cargarEstacion();
+      if (map) actualizarMapa();
+    }
+
+    function actualizarModo() {
+      const modo = getRadioValue('modo');
+      if (modo === 'individual') {
+        document.getElementById('vista-individual').style.display = 'block';
+        document.getElementById('vista-mapa').style.display = 'none';
+        document.getElementById('section-select-estacion').style.display = 'block';
+      } else if (modo === 'mapa') {
+        document.getElementById('vista-individual').style.display = 'none';
+        document.getElementById('vista-mapa').style.display = 'block';
+        document.getElementById('section-select-estacion').style.display = 'none';
+        if (!map) initMap();
+        actualizarMapa();
       }
     }
 
-    renderizar();
+    function cargarEstacion() {
+      const cod = document.getElementById('select-estacion').value;
+      if (!cod) return;
+
+      const mod = getRadioValue('modelo');
+      const est = estacionesData[cod];
+      const st = est.stats[mod];
+
+      // Actualizar Header y Métricas
+      document.getElementById('titulo-estacion').innerText = `📍 Estación: ${est.nombre} (${cod}) — Modelo: ${mod.toUpperCase()}`;
+      document.getElementById('m-obs').innerText = `${st.obs_media.toFixed(1)} m s.n.m.`;
+      document.getElementById('m-alt').innerText = `${est.alt} m s.n.m.`;
+      document.getElementById('m-dias').innerText = `${st.n_dias} días`;
+      document.getElementById('m-src').innerText = `${est.src}`;
+
+      document.getElementById('m-pre').innerText = `${st.pre_rmse.toFixed(1)} m`;
+      document.getElementById('m-idw').innerText = `${st.idw_rmse.toFixed(1)} m`;
+      document.getElementById('m-kriging').innerText = `${st.krig_rmse.toFixed(1)} m`;
+      document.getElementById('m-r').innerText = `${st.krig_r.toFixed(3)}`;
+
+      // Cargar serie temporal JSON
+      const fileName = est.filename || cod;
+      fetch(`datos/series/${fileName}.json`)
+        .then(res => res.json())
+        .then(data => {
+          currentSerie = data;
+          actualizarGraficos();
+        });
+    }
+
+    function actualizarGraficos() {
+      if (!currentSerie) return;
+
+      const mod = getRadioValue('modelo');
+      const metodo = getRadioValue('metodo');
+      const mostrarFuturo = document.getElementById('check-futuro').checked;
+
+      const h = currentSerie.historico;
+      const traces = [];
+
+      // Traza Observación
+      traces.push({
+        x: h.fechas, y: h.obs, mode: 'lines', name: 'Observación',
+        line: { color: '#1f77b4', width: 1.2 }
+      });
+
+      // Trazas segun método seleccionado
+      if (metodo === 'comp' || metodo === 'idw') {
+        traces.push({
+          x: h.fechas, y: h[`${mod}_idw`], mode: 'lines', name: 'Post-IDW',
+          line: { color: '#ff7f0e', width: 1.1 }
+        });
+      }
+
+      if (metodo === 'comp' || metodo === 'kriging') {
+        traces.push({
+          x: h.fechas, y: h[`${mod}_kriging`], mode: 'lines', name: 'Post-Kriging',
+          line: { color: '#00cc96', width: 1.0 }
+        });
+      }
+
+      const layoutDark = {
+        paper_bgcolor: '#0e1117', plot_bgcolor: '#0e1117',
+        font: { color: '#fafafa' },
+        xaxis: { title: 'Fecha', gridcolor: '#262730' },
+        yaxis: { title: 'Isoterma 0°C (m s.n.m.)', gridcolor: '#262730' },
+        height: 400, margin: { t: 20, b: 40, l: 60, r: 20 },
+        hovermode: 'x unified'
+      };
+
+      Plotly.newPlot('chart-historico', traces, layoutDark);
+
+      // Grafico Futuro
+      const containerFuturo = document.getElementById('container-futuro');
+      if (mostrarFuturo) {
+        containerFuturo.style.display = 'block';
+        const f = currentSerie.futuro;
+        const tracesFut = [];
+
+        if (metodo === 'comp' || metodo === 'idw') {
+          tracesFut.push({ x: f.fechas, y: f.idw, mode: 'lines', name: 'Futuro Post-IDW (SSP5-8.5)', line: { color: '#d62728', width: 0.4 } });
+        }
+        if (metodo === 'comp' || metodo === 'kriging') {
+          tracesFut.push({ x: f.fechas, y: f.kriging, mode: 'lines', name: 'Futuro Post-Kriging (SSP5-8.5)', line: { color: '#9467bd', width: 0.4 } });
+        }
+
+        Plotly.newPlot('chart-futuro', tracesFut, layoutDark);
+      } else {
+        containerFuturo.style.display = 'none';
+      }
+    }
+
+    function initMap() {
+      map = L.map('map').setView([-11.5, -75.5], 6);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(map);
+      markersGroup = L.layerGroup().addTo(map);
+    }
+
+    function actualizarMapa() {
+      if (!markersGroup) return;
+      markersGroup.clearLayers();
+      const mod = getRadioValue('modelo');
+
+      Object.keys(estacionesData).forEach(cod => {
+        const est = estacionesData[cod];
+        if (est.lat && est.lon) {
+          const st = est.stats[mod];
+          const color = st.krig_r >= 0.6 ? 'green' : (st.krig_r >= 0.4 ? 'orange' : 'red');
+
+          const marker = L.circleMarker([est.lat, est.lon], {
+            radius: 7, color: color, fillColor: color, fillOpacity: 0.8
+          });
+
+          marker.bindPopup(`<b>${est.nombre}</b><br>Obs: ${st.obs_media} m<br>RMSE Kriging: ${st.krig_rmse} m`);
+          marker.on('click', () => {
+            document.querySelector('input[value="individual"]').checked = true;
+            actualizarModo();
+            document.getElementById('select-estacion').value = cod;
+            cargarEstacion();
+          });
+
+          markersGroup.addLayer(marker);
+        }
+      });
+    }
   </script>
 </body>
 </html>
