@@ -142,7 +142,6 @@ for _, row in df_meta.iterrows():
     )
     stat_ke = rk_e.iloc[0].to_dict() if not rk_e.empty else {}
     stat_ie = ri_e.iloc[0].to_dict() if not ri_e.empty else {}
-
     indice_estaciones[cod] = {
         "nombre": nom,
         "lat": lat_val,
@@ -153,6 +152,11 @@ for _, row in df_meta.iterrows():
             "wrf": {
                 "obs_media": round(float(stat_kw.get("OBS_MEDIA_M", 0.0) or 0.0), 1),
                 "n_dias": int(stat_kw.get("N_DIAS", 0) or 0),
+                # MEDIAS DE ISOTERMA (Agregadas)
+                "pre_media": round(float(stat_kw.get("PRE_BC_MEDIA", 0.0) or 0.0), 1),
+                "krig_media": round(float(stat_kw.get("POST_BC_MEDIA", 0.0) or 0.0), 1),
+                "idw_media": round(float(stat_iw.get("POST_BC_MEDIA", 0.0) or 0.0), 1),
+                # MÉTRICAS DE ERROR Y CORRELACIÓN
                 "pre_rmse": round(float(stat_kw.get("PRE_BC_RMSE", 0.0) or 0.0), 1),
                 "krig_rmse": round(float(stat_kw.get("POST_BC_RMSE", 0.0) or 0.0), 1),
                 "krig_r": round(float(stat_kw.get("POST_BC_R", 0.0) or 0.0), 3),
@@ -161,6 +165,11 @@ for _, row in df_meta.iterrows():
             "era5": {
                 "obs_media": round(float(stat_ke.get("OBS_MEDIA_M", 0.0) or 0.0), 1),
                 "n_dias": int(stat_ke.get("N_DIAS", 0) or 0),
+                # MEDIAS DE ISOTERMA (Agregadas)
+                "pre_media": round(float(stat_ke.get("PRE_BC_MEDIA", 0.0) or 0.0), 1),
+                "krig_media": round(float(stat_ke.get("POST_BC_MEDIA", 0.0) or 0.0), 1),
+                "idw_media": round(float(stat_ie.get("POST_BC_MEDIA", 0.0) or 0.0), 1),
+                # MÉTRICAS DE ERROR Y CORRELACIÓN
                 "pre_rmse": round(float(stat_ke.get("PRE_BC_RMSE", 0.0) or 0.0), 1),
                 "krig_rmse": round(float(stat_ke.get("POST_BC_RMSE", 0.0) or 0.0), 1),
                 "krig_r": round(float(stat_ke.get("POST_BC_R", 0.0) or 0.0), 3),
