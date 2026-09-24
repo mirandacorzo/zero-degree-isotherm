@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Isoterma 0°C - Andes Peruanos</title>
+  
+  <!-- Estilos y Librerías Web de libre acceso -->
+  <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <style>
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px; background-color: #f8f9fa; color: #333; }
+    .header { text-align: center; margin-bottom: 20px; }
+    .controls { display: flex; gap: 15px; margin-bottom: 20px; justify-content: center; background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+    select, label { font-size: 15px; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .card { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+    #map { height: 450px; border-radius: 6px; }
+    #chart-hist, #chart-fut { height: 420px; }
+    @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <h1>🏔️ Isoterma 0°C - Andes Peruanos</h1>
+    <p>Desempeño de la Corrección de Sesgo Espacial (WRF / ERA5)</p>
+  </div>
+
+  <div class="controls">
+    <div>
+      <label><b>Seleccionar Estación:</b> </label>
+      <select id="select-estacion" onchange="renderizar()"></select>
+    </div>
+    <div>
+      <label>
+        <input type="checkbox" id="check-futuro" onchange="renderizar()"> 🔮 Ver Proyección SSP5-8.5 (2015–2065)
+      </label>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <h3>🗺️ Ubicación de Estaciones</h3>
+      <div id="map"></div>
+    </div>
+    <div class="card">
+      <h3>📈 Serie Histórica (1980–2014)</h3>
+      <div id="chart-hist"></div>
+    </div>
+  </div>
+
+  <div class="card" id="card-futuro" style="display:none; margin-top:20px;">
+    <h3>🔮 Proyección Futura SSP5-8.5 (2015–2065)</h3>
+    <div id="chart-fut"></div>
+  </div>
+
+  <!-- Cargar Datos JS -->
+  <script src="data.js"></script>
+
+  <script>
+    const selector = document.getElementById('select-estacion');
+    const checkFuturo = document.getElementById('check-futuro');
+
+    // Inicializar Mapa Leaflet
+    const map = L.map('map').setView([-11.5, -75.5], 6);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(map);
+
+    // Cargar opciones
+    Object.keys(DATA_ESTACIONES).forEach(cod => {
+      const est = DATA_ESTACIONES[cod];
+      const opt = document.createElement('option');
+      opt.value = cod;
+      opt.innerText = `${est.nombre} (${cod})`;
+      selector.appendChild(opt);
+
+      if (est.lat && est.lon) {
+        const marker = L.circleMarker([est.lat, est.lon], {
+          radius: 7,
+          color: est.r_kriging >= 0.6 ? 'green' : (est.r_kriging >= 0.4 ? 'orange' : 'red'),
+          fillOpacity: 0.8
+        }).addTo(map);
+
+        marker.bindPopup(`<b>${est.nombre}</b><br>Obs: ${est.obs_media.toFixed(1)} m<br>RMSE Kriging: ${est.rmse_kriging.toFixed(1)} m`);
+        marker.on('click', () => { selector.value = cod; renderizar(); });
+      }
+    });
+
+    function renderizar() {
+      const cod = selector.value;
+      const est = DATA_ESTACIONES[cod];
+
+      // Gráfico Histórico
+      const traceObs = { x: est.historico.fechas, y: est.historico.obs, mode: 'lines', name: 'Observación', line: { color: '#1f77b4', width: 1.2 } };
+      const tracePre = { x: est.historico.fechas, y: est.historico.wrf_pre, mode: 'lines', name: 'Pre-BC Original', line: { color: '#ef553b', width: 0.8 } };
+      const traceKrig = { x: est.historico.fechas, y: est.historico.wrf_kriging, mode: 'lines', name: 'Post-Kriging', line: { color: '#00cc96', width: 1 } };
+
+      Plotly.newPlot('chart-hist', [traceObs, tracePre, traceKrig], {
+        xaxis: { title: 'Fecha' }, yaxis: { title: 'Isoterma 0°C (m s.n.m.)' },
+        margin: { t: 20, b: 40, l: 50, r: 20 }, hovermode: 'x unified'
+      });
+
+      // Gráfico Futuro
+      if (checkFuturo.checked) {
+        document.getElementById('card-futuro').style.display = 'block';
+        const traceFutK = { x: est.futuro.fechas, y: est.futuro.kriging, mode: 'lines', name: 'Futuro Post-Kriging', line: { color: '#9467bd', width: 0.4 } };
+        Plotly.newPlot('chart-fut', [traceFutK], {
+          xaxis: { title: 'Fecha Proyección' }, yaxis: { title: 'Isoterma 0°C (m s.n.m.)' },
+          margin: { t: 20, b: 40, l: 50, r: 20 }, hovermode: 'x unified'
+        });
+      } else {
+        document.getElementById('card-futuro').style.display = 'none';
+      }
+    }
+
+    renderizar();
+  </script>
+</body>
+</html>
