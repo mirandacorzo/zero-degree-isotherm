@@ -237,9 +237,9 @@
       document.getElementById('m-dias').innerText = `${st.n_dias} días`;
       document.getElementById('m-src').innerText = `${est.src}`;
 
-      document.getElementById('m-pre').innerText = `${st.pre_rmse.toFixed(1)} m`;
-      document.getElementById('m-idw').innerText = `${st.idw_rmse.toFixed(1)} m`;
-      document.getElementById('m-kriging').innerText = `${st.krig_rmse.toFixed(1)} m`;
+      document.getElementById('m-pre').innerText = `${st.pre_media.toFixed(1)} m`;
+      document.getElementById('m-idw').innerText = `${st.idw_media.toFixed(1)} m`;
+      document.getElementById('m-kriging').innerText = `${st.krig_media.toFixed(1)} m`;
       document.getElementById('m-r').innerText = `${st.krig_r.toFixed(3)}`;
 
       // Cargar serie temporal JSON
