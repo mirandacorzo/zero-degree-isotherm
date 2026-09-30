@@ -150,34 +150,106 @@ for _, row in df_meta.iterrows():
         "src": src_val,
         "stats": {
             "wrf": {
-                "obs_media": round(float(stat_kw.get("OBS_MEDIA_M", 0.0) or 0.0), 1),
+                "obs_media": round(
+                    float(stat_kw.get("OBS_MEDIA_M", 0.0) or 0.0), 1
+                ),
                 "n_dias": int(stat_kw.get("N_DIAS", 0) or 0),
-                # MEDIAS DE ISOTERMA (Agregadas)
-                "pre_media": round(float(stat_kw.get("PRE_BC_MEDIA", 0.0) or 0.0), 1),
-                "krig_media": round(float(stat_kw.get("POST_BC_MEDIA", 0.0) or 0.0), 1),
-                "idw_media": round(float(stat_iw.get("POST_BC_MEDIA", 0.0) or 0.0), 1),
-                # MÉTRICAS DE ERROR Y CORRELACIÓN
-                "pre_rmse": round(float(stat_kw.get("PRE_BC_RMSE", 0.0) or 0.0), 1),
-                "krig_rmse": round(float(stat_kw.get("POST_BC_RMSE", 0.0) or 0.0), 1),
-                "krig_r": round(float(stat_kw.get("POST_BC_R", 0.0) or 0.0), 3),
-                "idw_rmse": round(float(stat_iw.get("POST_BC_RMSE", 0.0) or 0.0), 1),
+                # Medias de Isoterma
+                "pre_media": round(
+                    float(stat_kw.get("PRE_BC_MEDIA", 0.0) or 0.0), 1
+                ),
+                "krig_media": round(
+                    float(stat_kw.get("POST_BC_MEDIA", 0.0) or 0.0), 1
+                ),
+                "idw_media": round(
+                    float(stat_iw.get("POST_BC_MEDIA", 0.0) or 0.0), 1
+                ),
+                # BIAS
+                "pre_bias": round(
+                    float(stat_kw.get("PRE_BC_BIAS", 0.0) or 0.0), 1
+                ),
+                "krig_bias": round(
+                    float(stat_kw.get("POST_BC_BIAS", 0.0) or 0.0), 1
+                ),
+                "idw_bias": round(
+                    float(stat_iw.get("POST_BC_BIAS", 0.0) or 0.0), 1
+                ),
+                # MAE
+                "pre_mae": round(
+                    float(stat_kw.get("PRE_BC_MAE", 0.0) or 0.0), 1
+                ),
+                "krig_mae": round(
+                    float(stat_kw.get("POST_BC_MAE", 0.0) or 0.0), 1
+                ),
+                "idw_mae": round(
+                    float(stat_iw.get("POST_BC_MAE", 0.0) or 0.0), 1
+                ),
+                # RMSE
+                "pre_rmse": round(
+                    float(stat_kw.get("PRE_BC_RMSE", 0.0) or 0.0), 1
+                ),
+                "krig_rmse": round(
+                    float(stat_kw.get("POST_BC_RMSE", 0.0) or 0.0), 1
+                ),
+                "idw_rmse": round(
+                    float(stat_iw.get("POST_BC_RMSE", 0.0) or 0.0), 1
+                ),
+                # Correlación R
+                "pre_r": round(float(stat_kw.get("PRE_BC_R", 0.0) or 0.0), 3),
+                "krig_r": round(
+                    float(stat_kw.get("POST_BC_R", 0.0) or 0.0), 3
+                ),
+                "idw_r": round(float(stat_iw.get("POST_BC_R", 0.0) or 0.0), 3),
             },
             "era5": {
-                "obs_media": round(float(stat_ke.get("OBS_MEDIA_M", 0.0) or 0.0), 1),
+                "obs_media": round(
+                    float(stat_ke.get("OBS_MEDIA_M", 0.0) or 0.0), 1
+                ),
                 "n_dias": int(stat_ke.get("N_DIAS", 0) or 0),
-                # MEDIAS DE ISOTERMA (Agregadas)
-                "pre_media": round(float(stat_ke.get("PRE_BC_MEDIA", 0.0) or 0.0), 1),
-                "krig_media": round(float(stat_ke.get("POST_BC_MEDIA", 0.0) or 0.0), 1),
-                "idw_media": round(float(stat_ie.get("POST_BC_MEDIA", 0.0) or 0.0), 1),
-                # MÉTRICAS DE ERROR Y CORRELACIÓN
-                "pre_rmse": round(float(stat_ke.get("PRE_BC_RMSE", 0.0) or 0.0), 1),
-                "krig_rmse": round(float(stat_ke.get("POST_BC_RMSE", 0.0) or 0.0), 1),
-                "krig_r": round(float(stat_ke.get("POST_BC_R", 0.0) or 0.0), 3),
-                "idw_rmse": round(float(stat_ie.get("POST_BC_RMSE", 0.0) or 0.0), 1),
+                "pre_media": round(
+                    float(stat_ke.get("PRE_BC_MEDIA", 0.0) or 0.0), 1
+                ),
+                "krig_media": round(
+                    float(stat_ke.get("POST_BC_MEDIA", 0.0) or 0.0), 1
+                ),
+                "idw_media": round(
+                    float(stat_ie.get("POST_BC_MEDIA", 0.0) or 0.0), 1
+                ),
+                "pre_bias": round(
+                    float(stat_ke.get("PRE_BC_BIAS", 0.0) or 0.0), 1
+                ),
+                "krig_bias": round(
+                    float(stat_ke.get("POST_BC_BIAS", 0.0) or 0.0), 1
+                ),
+                "idw_bias": round(
+                    float(stat_ie.get("POST_BC_BIAS", 0.0) or 0.0), 1
+                ),
+                "pre_mae": round(
+                    float(stat_ke.get("PRE_BC_MAE", 0.0) or 0.0), 1
+                ),
+                "krig_mae": round(
+                    float(stat_ke.get("POST_BC_MAE", 0.0) or 0.0), 1
+                ),
+                "idw_mae": round(
+                    float(stat_ie.get("POST_BC_MAE", 0.0) or 0.0), 1
+                ),
+                "pre_rmse": round(
+                    float(stat_ke.get("PRE_BC_RMSE", 0.0) or 0.0), 1
+                ),
+                "krig_rmse": round(
+                    float(stat_ke.get("POST_BC_RMSE", 0.0) or 0.0), 1
+                ),
+                "idw_rmse": round(
+                    float(stat_ie.get("POST_BC_RMSE", 0.0) or 0.0), 1
+                ),
+                "pre_r": round(float(stat_ke.get("PRE_BC_R", 0.0) or 0.0), 3),
+                "krig_r": round(
+                    float(stat_ke.get("POST_BC_R", 0.0) or 0.0), 3
+                ),
+                "idw_r": round(float(stat_ie.get("POST_BC_R", 0.0) or 0.0), 3),
             },
         },
     }
-
     # Series temporales
     dh = (
         df_h[df_h["CODIGO"] == cod].sort_values("FECHA_KEY")

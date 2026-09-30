@@ -156,6 +156,32 @@
 
       <div class="divider"></div>
 
+
+<!-- TABLA DE ESTADÍSTICOS PRINCIPALES -->
+      <h3>📋 Resumen de Estadísticos de Desempeño</h3>
+      <div style="overflow-x: auto;">
+        <table id="tabla-estadisticos" style="width: 100%; border-collapse: collapse; margin-top: 10px; background: #161a23; border-radius: 6px; text-align: center;">
+          <thead>
+            <tr style="border-bottom: 1px solid #363940; color: #9a9a9a;">
+              <th style="padding: 10px; text-align: left;">Método</th>
+              <th>Isoterma Media (m)</th>
+              <th>BIAS (m)</th>
+              <th>MAE (m)</th>
+              <th>RMSE (m)</th>
+              <th>Correlación (R)</th>
+            </tr>
+          </thead>
+          <tbody id="body-estadisticos">
+            <!-- Se llena automáticamente con JavaScript -->
+          </tbody>
+        </table>
+      </div>
+
+      <div class="divider"></div>
+
+      <h3>📈 Serie de Tiempo Diaria Comparativa (Histórico 1980–2014)</h3>
+      <div class="chart-container" id="chart-historico"></div>
+
       <h3>📈 Serie de Tiempo Diaria Comparativa (Histórico 1980–2014)</h3>
       <div class="chart-container" id="chart-historico"></div>
 
@@ -241,6 +267,44 @@
       document.getElementById('m-idw').innerText = `${st.idw_media.toFixed(1)} m`;
       document.getElementById('m-kriging').innerText = `${st.krig_media.toFixed(1)} m`;
       document.getElementById('m-r').innerText = `${st.krig_r.toFixed(3)}`;
+// 3. Llenar la Tabla de Estadísticos
+      const bodyTabla = document.getElementById('body-estadisticos');
+      bodyTabla.innerHTML = `
+        <tr style="border-bottom: 1px solid #262730;">
+          <td style="padding: 10px; text-align: left; font-weight: bold;">Observación Inicial</td>
+          <td>${st.obs_media.toFixed(1)}</td>
+          <td>0.0</td>
+          <td>0.0</td>
+          <td>0.0</td>
+          <td>1.000</td>
+        </tr>
+        <tr style="border-bottom: 1px solid #262730; color: #ef553b;">
+          <td style="padding: 10px; text-align: left; font-weight: bold;">Pre-BC (Original)</td>
+          <td>${st.pre_media.toFixed(1)}</td>
+          <td>${st.pre_bias.toFixed(1)}</td>
+          <td>${st.pre_mae.toFixed(1)}</td>
+          <td>${st.pre_rmse.toFixed(1)}</td>
+          <td>${st.pre_r.toFixed(3)}</td>
+        </tr>
+        <tr style="border-bottom: 1px solid #262730; color: #ff7f0e;">
+          <td style="padding: 10px; text-align: left; font-weight: bold;">Post-IDW</td>
+          <td>${st.idw_media.toFixed(1)}</td>
+          <td>${st.idw_bias.toFixed(1)}</td>
+          <td>${st.idw_mae.toFixed(1)}</td>
+          <td>${st.idw_rmse.toFixed(1)}</td>
+          <td>${st.idw_r.toFixed(3)}</td>
+        </tr>
+        <tr style="color: #00cc96;">
+          <td style="padding: 10px; text-align: left; font-weight: bold;">Post-Kriging</td>
+          <td>${st.krig_media.toFixed(1)}</td>
+          <td>${st.krig_bias.toFixed(1)}</td>
+          <td>${st.krig_mae.toFixed(1)}</td>
+          <td>${st.krig_rmse.toFixed(1)}</td>
+          <td>${st.krig_r.toFixed(3)}</td>
+        </tr>
+      `;
+
+
 
       // Cargar serie temporal JSON
       const fileName = est.filename || cod;
