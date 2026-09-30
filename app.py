@@ -18,12 +18,12 @@ st.markdown(
 )
 
 # Rutas de archivos consolidados
-FILE_KRIGING = "Resultados/Metodo_Kriging_BiasCorrection/Tabla_Estadisticos_Pre_vs_Post_Kriging_Historico.xlsx"
-FILE_IDW = "Resultados/Metodo_1_BiasCorrection/Tabla_Estadisticos_Pre_vs_Post_BC_IDW_Historico.xlsx"
+FILE_KRIGING = "Resultados/Metodo_Kriging_BiasCorrection_GT4/Tabla_Estadisticos_Pre_vs_Post_Kriging_Historico_GT4.xlsx"
+FILE_IDW = "Resultados/Metodo_1_BiasCorrection_GT4/Tabla_Estadisticos_Pre_vs_Post_BC_IDW_Historico_GT4.xlsx"
 FILE_META = "metadata_estaciones.csv"
 
-FILE_CSV_HISTORICO = "Procesados_CSV/series_historicas_consolidadas.parquet"
-FILE_CSV_FUTURO = "Procesados_CSV/series_futuras_ssp585.parquet"
+FILE_CSV_HISTORICO = "Procesados_CSV_GT4/series_historicas_consolidadas.parquet"
+FILE_CSV_FUTURO = "Procesados_CSV_GT4/series_futuras_ssp585.parquet"
 
 
 def normalizar_codigo(val):
